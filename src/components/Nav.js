@@ -1,14 +1,32 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useNavigate,useLocation } from 'react-router-dom';
+import { GoogleAuthProvider, getAuth, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import app from '../firebase';
 
 export default function Nav() {
     const [show, handleShow] = useState(false);
     const [searchValue,setSearchValue] = useState("");
     const navigate = useNavigate();
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
     const {pathname} = useLocation();
+    const initialUserData = localStorage.getItem("userData") ? JSON.parse(localStorage.getItem("userData")) : {};
+    const [userData, setUserData] = useState(initialUserData);
 
-
+    useEffect(()=> {
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                if(pathname === "/") {
+                    navigate("/main")
+                }
+                
+            }
+            else {
+                navigate("/");
+            }
+        })
+    },[auth, navigate,pathname]);
     
 
     useEffect(()=> {
@@ -28,6 +46,25 @@ export default function Nav() {
         setSearchValue(e.target.value);
         navigate(`/search?q=${e.target.value}`);
     };
+    const handleAuth = () => {
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                setUserData(result.user);
+                localStorage.setItem('userData', JSON.stringify(result.user));
+
+            })
+            .catch((error) => {
+                alert(error.message);
+            })
+    }
+    const handleSignOut = () => {
+        signOut(auth).then(()=>{
+            setUserData({});
+            navigate(`/`);
+        }).catch((error) => {
+            alert(error.message);
+        });
+    }
 
   return (
     <NavWrapper show={show}>
@@ -38,7 +75,8 @@ export default function Nav() {
             onClick={() => (window.location.href="/")}
         />
         </Logo >
-        {pathname === "/" ? (<Login >Login</Login>) : 
+        {pathname === "/" ? (<Login onClick={handleAuth}>Login</Login>) : 
+        
         <Input 
             value={searchValue}
             onChange={handleChange}
@@ -47,6 +85,14 @@ export default function Nav() {
             placeholder='영화를 검색해주세요.'>
         
         </Input>}
+        {pathname !== "/" && (
+            <SignOut>
+                <UserImg src={userData.photoURL} alt={userData.displayName}/>
+                <DropDown>
+                    <span onClick={handleSignOut}>Sign Out</span>
+                </DropDown>
+            </SignOut>
+        )}
     </NavWrapper>
   )
 }
@@ -100,5 +146,43 @@ const Logo = styled.a`
     img {
         display : block;
         width : 100%;
+    }
+`;
+const UserImg = styled.img`
+    border-radius : 50%;
+    width : 100%;
+    height : 100%;
+    object-fit : cover;
+`;
+
+const DropDown = styled.div`
+    position : absolute;
+    top : 48px;
+    right : 0px;
+    background : rgb(19,19,19);
+    border : 1px solid rgba(151, 151, 151, 0.34);
+    border-radius : 4px;
+    box-shadow: rgb(0 0 0 /50%) 0px 0px 18px 0px;
+    padding : 10px;
+    font-size : 14px;
+    letter-spacing : 3px;
+    width : 100px;
+    opacity : 0;
+`;
+
+const SignOut = styled.div`
+    position : relative;
+    height : 48px;
+    width : 48px;
+    display : flex;
+    cursor : pointer;
+    align-items : center;
+    justify-content : center;
+
+    &:hover {
+        ${DropDown} {
+            opacity : 1;
+            transition-duration : 1s;
+        }
     }
 `;
