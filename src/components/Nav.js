@@ -26,9 +26,10 @@ export default function Nav() {
                 navigate("/");
             }
         })
+        
     },[auth, navigate,pathname]);
     
-
+ 
     useEffect(()=> {
         window.addEventListener("scroll", () => {
             if(window.scrollY > 50) {
