@@ -2,6 +2,7 @@ import React,{useEffect, useState} from 'react'
 import { useLocation,useNavigate } from 'react-router-dom'
 import axios from "../../api/axios";
 import './SearchPage.css';
+import useDebounce from '../../hooks/useDebounce';
 
 
 export default function SearchPage() {
@@ -15,12 +16,13 @@ export default function SearchPage() {
 
     let query = useQuery();
     const searchTerm = query.get("q");
+    const debouncedSearchTerm = useDebounce(query.get("q"),500);
 
     useEffect(() => {
-        if(searchTerm) {
-            fetchSearchMovie(searchTerm);
+        if(debouncedSearchTerm) {
+            fetchSearchMovie(debouncedSearchTerm);
         }
-    },[searchTerm]);
+    },[debouncedSearchTerm]);
 
     const fetchSearchMovie = async (searchTerm)=> {
         try {
@@ -62,7 +64,7 @@ export default function SearchPage() {
     }
     else {
         return (
-            <section className='no-results'>
+            <section className='no_results'>
                 <div className='no_results_text'>
                     <p>
                         찾고자하는 검색어 "{searchTerm}"에 해당하는 영화가 없습니다.
